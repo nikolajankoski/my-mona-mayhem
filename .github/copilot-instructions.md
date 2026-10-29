@@ -18,8 +18,12 @@ Use the repository's actual scripts from `package.json`:
   - `npm run build`
 - Preview the built app locally:
   - `npm run preview`
+- Check JavaScript, TypeScript, and Astro code with ESLint:
+  - `npm run lint`
+- Automatically fix supported lint/style issues:
+  - `npm run lint:fix`
 
-There is no dedicated `test` or `lint` script in this repo right now. For validation, use the Astro build and manual endpoint checks such as:
+There is no dedicated test script in this repo right now. For validation, run the lint and build commands and manually check endpoints such as:
 
 - `curl http://localhost:4321/api/contributions/octocat`
 
