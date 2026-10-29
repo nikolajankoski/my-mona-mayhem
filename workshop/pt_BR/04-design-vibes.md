@@ -1,74 +1,83 @@
-<!-- l10n-sync: source-file="04-design-vibes.md" -->
-# Parte 4: Tema Orientado a Design
+<!-- l10n-sync: source-file="workshop/04-design-vibes.md" -->
+# Parte 4: Tematização orientada por design
 
 ---
 
-Nesta parte, você vai usar o **Plan Mode** para projetar uma transformação visual completa e o **Agent Mode** para implementá-la. Isso é desenvolvimento orientado a design — comece com a visão, itere nos visuais e deixe o Copilot cuidar do trabalho pesado de CSS.
+Nesta parte, você vai usar os ciclos de planejamento e implementação do Copilot para criar uma transformação completa do tema. É desenvolvimento orientado por design: comece com a visão, itere no visual e deixe o Copilot cuidar do trabalho pesado de CSS.
 
-## Tarefa 1: Planeje o Tema Retrô
+## Tarefa 1: Planeje o tema retrô
 
-Mude para o modo **Plan** no GitHub Copilot.
+<!-- track:vscode:start -->
+Mude para **Plan** no GitHub Copilot Chat.
+<!-- track:vscode:end -->
 
-Insira este prompt:
+<!-- track:cli:start -->
+Use `/plan` no GitHub Copilot CLI ou pressione **Shift+Tab** até ativar o modo de planejamento.
+<!-- track:cli:end -->
 
-> I want to transform this page into a full retro arcade experience. Plan a comprehensive visual overhaul that includes: CRT scanline effects on the background, neon glow on the title that pulses like a neon sign, animated VS badge with gradient color shifts, shine/shimmer overlay on the user result cards, float-in animations for input fields, color-shifting loading text between green and purple, and hover glow effects on contribution squares. Keep the dark background (#0a0a1a) with green (#5fed83) and purple (#8a2be2) accent colors.
+Digite este prompt:
 
-O Copilot vai gerar um plano de implementação detalhado cobrindo todos os efeitos visuais. **Não aceite imediatamente** — revise o plano e itere:
+> Quero transformar esta página em uma experiência completa de arcade retrô. Planeje uma reformulação visual abrangente que inclua: efeitos de linhas de varredura CRT no fundo, brilho neon no título pulsando como um letreiro, selo VS animado com mudanças de cor em gradiente, sobreposição de brilho nas cartas de resultado, animações de entrada flutuante nos campos, texto de carregamento alternando entre verde e roxo e efeitos de brilho ao passar o cursor sobre os quadrados de contribuição. Mantenha o fundo escuro (`#0a0a1a`) e use verde (`#5fed83`) e roxo (`#8a2be2`) como cores de destaque. Use um tema escuro com a fonte retrô Press Start 2P do Google Fonts.
 
-- Sugira ajustes no timing das animações (ex.: "Make the neon pulse slower, around 3 seconds")
-- Pergunte sobre efeitos específicos (ex.: "How will the shimmer overlay work on the cards?")
-- Solicite mudanças na abordagem se algo não parecer correto
+O Copilot vai gerar um plano detalhado com todos os efeitos visuais. **Não aceite imediatamente** — revise o plano e itere:
 
-Quando estiver satisfeito com o plano, deixe o Copilot prosseguir com a implementação.
+- Sugira ajustes no tempo das animações (por exemplo: "Deixe o pulso neon mais lento, com cerca de 3 segundos").
+- Pergunte sobre efeitos específicos (por exemplo: "Como vai funcionar a sobreposição de brilho nas cartas?").
+- Peça mudanças na abordagem se algo não parecer adequado.
 
-## Tarefa 2: Implemente o Tema
+## Tarefa 2: Implemente o tema
 
-Mude para o modo **Agent** e peça ao Copilot para implementar o plano:
+Quando estiver satisfeito com o plano, peça ao Copilot para implementá-lo.
 
-> Implement the retro arcade theme plan we just designed.
+> Implemente o plano do tema de arcade retrô que acabamos de criar.
 
-O Copilot vai adicionar múltiplas animações CSS, pseudo-elementos e transições na sua folha de estilos. Isso pode incluir:
+O Copilot vai adicionar várias animações CSS, pseudoelementos e transições à folha de estilos. Isso pode incluir:
 
-- `@keyframes` para scanlines, pulso neon, shimmer e efeitos de float-in
-- Pseudo-elementos (`::before`, `::after`) para efeitos de sobreposição
-- CSS custom properties para as cores do tema
-- Estados de transição e hover para elementos interativos
+- `@keyframes` para linhas de varredura, pulso neon, brilho e animações de entrada flutuante.
+- Pseudoelementos (`::before`, `::after`) para efeitos de sobreposição.
+- Propriedades personalizadas de CSS para as cores do tema.
+- Transições e estados de hover para elementos interativos.
 
-Depois que as alterações forem aplicadas, **verifique a pré-visualização no seu navegador** para ver a transformação completa do tema retrô arcade.
+<!-- track:cli:start -->
+Depois que as alterações forem aplicadas, use `/diff` para revisar os estilos antes de aprová-los.
+<!-- track:cli:end -->
 
-## Tarefa 3: Ajuste Fino das Vibes
+## Tarefa 3: Ajuste o visual
 
-Mantenha a pré-visualização do navegador aberta e itere no design. Tente prompts como:
+> **⚠️ As alterações não apareceram?** Se o novo tema ou as animações não estiverem aparecendo, pare o servidor de desenvolvimento (`Ctrl+C`), reinicie com `npm run dev` e atualize o navegador à força (`Ctrl+Shift+R`).
 
-> The scanline effect is too strong, reduce opacity to 0.03
+Mantenha a prévia do navegador aberta e itere no design. Experimente prompts como:
 
-> Add a subtle electrical flicker to the title text
+> O efeito das linhas de varredura está forte demais; reduza a opacidade para 0.03.
 
-> The VS badge should pulse more dramatically
+> Adicione um leve piscar elétrico ao texto do título.
 
-Isso é **desenvolvimento orientado a design** — você está iterando na saída visual em tempo real. Cada prompt refina a experiência até que fique perfeita. Não se contente com "bom o suficiente" — aperfeiçoe as vibes até que a página pareça pertencer a um gabinete de arcade.
+> O selo VS deveria pulsar com mais intensidade.
 
-## Tarefa 4: Atualize as Instruções
+Isso é **desenvolvimento orientado por design** — você está iterando no resultado visual em tempo real. Cada prompt refina a experiência. Não se contente com algo apenas "bom o suficiente"; continue ajustando até a página parecer uma máquina de arcade.
 
-Suas instruções de workspace devem refletir decisões importantes de design. Peça ao Copilot:
+## Tarefa 4: Atualize as instruções
 
-> Add a design guide section to copilot-instructions.md describing our retro arcade theme: colors, fonts, animation style
+As instruções devem refletir as principais decisões de design para orientar os próximos prompts.
 
-Isso mantém futuras interações com o Copilot consistentes com a identidade visual que você estabeleceu. Qualquer nova funcionalidade ou componente seguirá automaticamente a estética retrô arcade.
+<!-- track:vscode:start -->
+Peça ao Copilot Chat:
 
-**Faça commit e push das suas alterações:**
+> Adicione ao `copilot-instructions.md` uma seção de guia de design que descreva o tema de arcade retrô: cores, fontes e estilo das animações.
+<!-- track:vscode:end -->
 
-```
-git add -A
-git commit -m "Add retro arcade theme with CRT and neon effects"
-git push
-```
+<!-- track:cli:start -->
+Peça ao Copilot CLI:
 
-## ✅ Parte 4 Concluída
+> Atualize as instruções do repositório com um guia curto de design para o tema de arcade retrô: cores, fontes, estilo das animações e a regra de manter a estética neon nas novas interfaces.
+<!-- track:cli:end -->
 
-**O que você aprendeu:**
+Quando a página estiver como você quer, faça commit das instruções e das alterações de design.
 
-- **Plan Mode para sistemas de design** — esboce uma reformulação visual completa antes de escrever qualquer código
-- **Iterar na saída visual** — use prompts rápidos de acompanhamento para ajustar animações, cores e efeitos
-- **Manter as instruções atualizadas com decisões de design** — documente seu tema para que o Copilot mantenha a consistência
-- **Fluxo de desenvolvimento orientado a design** — comece com a visão, implemente com IA, refine até ficar perfeito
+## ✅ Parte 4 concluída
+
+**Você aprendeu a:**
+
+- Usar os fluxos de planejamento para esboçar um **sistema de design antes de implementá-lo**.
+- **Iterar no resultado visual** com prompts curtos.
+- **Atualizar as instruções após decisões importantes** para manter a identidade visual consistente.
