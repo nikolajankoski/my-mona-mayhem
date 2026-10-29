@@ -70,16 +70,23 @@
 
 			<section id="battle-results" class="battle-results" aria-labelledby="results-heading" hidden>
 				<h2 id="results-heading">Battle results</h2>
-				<div class="scoreboard">
+				<div class="matchup">
 					<article class="score-card">
 						<h3 id="player-one-name">Player 1</h3>
-						<p class="score" id="player-one-score">—</p>
-						<p class="score-label">contributions</p>
+						<p class="score"><span id="player-one-score">—</span> <span class="score-label">contributions</span></p>
+						<p class="date-range" id="player-one-range"></p>
+						<div class="graph-scroll">
+							<div class="contribution-grid" id="player-one-grid"></div>
+						</div>
 					</article>
+					<p class="result-versus" aria-label="versus">VS</p>
 					<article class="score-card">
 						<h3 id="player-two-name">Player 2</h3>
-						<p class="score" id="player-two-score">—</p>
-						<p class="score-label">contributions</p>
+						<p class="score"><span id="player-two-score">—</span> <span class="score-label">contributions</span></p>
+						<p class="date-range" id="player-two-range"></p>
+						<div class="graph-scroll">
+							<div class="contribution-grid" id="player-two-grid"></div>
+						</div>
 					</article>
 				</div>
 			</section>
@@ -88,14 +95,35 @@
 </html>
 
 <script>
+	interface ContributionDay {
+		weekday: number;
+		count: number;
+		level: number;
+	}
+
+	interface ContributionWeek {
+		index: number;
+		first_day: string;
+		contribution_days: ContributionDay[];
+	}
+
 	interface ContributionsResponse {
+		schema: string;
+		generated_at: string;
+		from: string;
+		to: string;
+		range_days: number;
 		total_contributions: number;
+		private_contributions_included: boolean;
+		colors_full: string[];
+		weeks: ContributionWeek[];
 	}
 
 	interface ApiError {
 		error?: string;
 	}
 
+	const DEFAULT_COLORS = ['#ebedf0', '#9be9a8', '#40c463', '#30a14e', '#216e39'];
 	const form = document.querySelector<HTMLFormElement>('#battle-form');
 	const playerOneInput = document.querySelector<HTMLInputElement>('#player-one');
 	const playerTwoInput = document.querySelector<HTMLInputElement>('#player-two');
@@ -106,6 +134,10 @@
 	const playerTwoName = document.querySelector<HTMLElement>('#player-two-name');
 	const playerOneScore = document.querySelector<HTMLElement>('#player-one-score');
 	const playerTwoScore = document.querySelector<HTMLElement>('#player-two-score');
+	const playerOneRange = document.querySelector<HTMLElement>('#player-one-range');
+	const playerTwoRange = document.querySelector<HTMLElement>('#player-two-range');
+	const playerOneGrid = document.querySelector<HTMLElement>('#player-one-grid');
+	const playerTwoGrid = document.querySelector<HTMLElement>('#player-two-grid');
 
 	if (
 		!form ||
@@ -117,9 +149,50 @@
 		!playerOneName ||
 		!playerTwoName ||
 		!playerOneScore ||
-		!playerTwoScore
+		!playerTwoScore ||
+		!playerOneRange ||
+		!playerTwoRange ||
+		!playerOneGrid ||
+		!playerTwoGrid
 	) {
 		throw new Error('Battle page is missing a required form or results element.');
+	}
+
+	function isContributionsResponse(data: unknown): data is ContributionsResponse {
+		if (typeof data !== 'object' || data === null) {
+			return false;
+		}
+
+		const candidate = data as Partial<ContributionsResponse>;
+		return (
+			typeof candidate.total_contributions === 'number' &&
+			Number.isFinite(candidate.total_contributions) &&
+			candidate.total_contributions >= 0 &&
+			typeof candidate.from === 'string' &&
+			typeof candidate.to === 'string' &&
+			Array.isArray(candidate.weeks) &&
+			Array.isArray(candidate.colors_full) &&
+			candidate.colors_full.length >= DEFAULT_COLORS.length &&
+			candidate.colors_full.every((color) => typeof color === 'string' && /^#[\da-f]{6}$/i.test(color)) &&
+			candidate.weeks.every(
+				(week) =>
+					typeof week === 'object' &&
+					week !== null &&
+					typeof week.first_day === 'string' &&
+					Array.isArray(week.contribution_days) &&
+					week.contribution_days.every(
+						(day) =>
+							Number.isInteger(day.weekday) &&
+							day.weekday >= 0 &&
+							day.weekday <= 6 &&
+							Number.isFinite(day.count) &&
+							day.count >= 0 &&
+							Number.isInteger(day.level) &&
+							day.level >= 0 &&
+							day.level < DEFAULT_COLORS.length,
+					),
+			)
+		);
 	}
 
 	async function fetchContributions(username: string): Promise<ContributionsResponse> {
@@ -133,42 +206,87 @@
 		}
 
 		if (!response.ok) {
-			const message =
-				typeof data === 'object' && data !== null && 'error' in data
-					? (data as ApiError).error
-					: undefined;
+			const message = typeof data === 'object' && data !== null && 'error' in data
+				? (data as ApiError).error
+				: undefined;
 			throw new Error(message || `Could not load @${username} (HTTP ${response.status}).`);
 		}
 
-		if (
-			typeof data !== 'object' ||
-			data === null ||
-			!('total_contributions' in data) ||
-			typeof data.total_contributions !== 'number' ||
-			!Number.isFinite(data.total_contributions) ||
-			data.total_contributions < 0
-		) {
+		if (!isContributionsResponse(data)) {
 			throw new Error(`Contribution data for @${username} has an unexpected format.`);
 		}
 
 		return data as ContributionsResponse;
 	}
 
+	function renderContributionGrid(
+		grid: HTMLElement,
+		username: string,
+		contributions: ContributionsResponse,
+	): void {
+		const colors = contributions.colors_full.every((color) => /^#[\da-f]{6}$/i.test(color))
+			? contributions.colors_full
+			: DEFAULT_COLORS;
+		const cells: HTMLSpanElement[] = [];
+
+		for (const week of contributions.weeks) {
+			const firstDay = new Date(`${week.first_day}T00:00:00Z`);
+
+			for (const day of week.contribution_days) {
+				const cell = document.createElement('span');
+				const date = new Date(firstDay);
+				date.setUTCDate(date.getUTCDate() + day.weekday);
+				const dateLabel = date.toLocaleDateString(undefined, {
+					timeZone: 'UTC',
+					year: 'numeric',
+					month: 'short',
+					day: 'numeric',
+				});
+				const countLabel = `${day.count} contribution${day.count === 1 ? '' : 's'}`;
+
+				cell.className = 'contribution-day';
+				cell.style.backgroundColor = colors[Math.min(Math.max(day.level, 0), colors.length - 1)];
+				cell.title = `${countLabel} on ${dateLabel}`;
+				cell.setAttribute('aria-label', cell.title);
+				cells.push(cell);
+			}
+		}
+
+		grid.replaceChildren(...cells);
+		grid.setAttribute('role', 'img');
+		grid.setAttribute(
+			'aria-label',
+			`${username}'s contribution graph from ${contributions.from} to ${contributions.to}`,
+		);
+	}
+
 	form.addEventListener('submit', async (event) => {
 		event.preventDefault();
 
-		if (!form.reportValidity()) {
+		const usernameOne = playerOneInput.value.trim();
+		const usernameTwo = playerTwoInput.value.trim();
+
+		if (!usernameOne || !usernameTwo) {
+			statusMessage.textContent = 'Enter both GitHub usernames to start the battle.';
+			(usernameOne ? playerTwoInput : playerOneInput).focus();
 			return;
 		}
 
-		const usernameOne = playerOneInput.value.trim();
-		const usernameTwo = playerTwoInput.value.trim();
+		playerOneInput.value = usernameOne;
+		playerTwoInput.value = usernameTwo;
+		if (!form.reportValidity()) {
+			statusMessage.textContent = 'Check the usernames and try again.';
+			return;
+		}
+
 		const originalButtonText = submitButton.textContent;
 
 		submitButton.disabled = true;
 		submitButton.textContent = 'Loading…';
 		form.setAttribute('aria-busy', 'true');
 		results.hidden = true;
+		playerOneGrid.replaceChildren();
+		playerTwoGrid.replaceChildren();
 		statusMessage.textContent = 'Fetching contribution data…';
 
 		try {
@@ -184,6 +302,10 @@
 			playerTwoName.textContent = `@${usernameTwo}`;
 			playerOneScore.textContent = numberFormat.format(totalOne);
 			playerTwoScore.textContent = numberFormat.format(totalTwo);
+			playerOneRange.textContent = `${contributionsOne.from} – ${contributionsOne.to}`;
+			playerTwoRange.textContent = `${contributionsTwo.from} – ${contributionsTwo.to}`;
+			renderContributionGrid(playerOneGrid, usernameOne, contributionsOne);
+			renderContributionGrid(playerTwoGrid, usernameTwo, contributionsTwo);
 			results.hidden = false;
 
 			if (totalOne === totalTwo) {
@@ -274,12 +396,18 @@
 		box-shadow: 0 18px 50px rgb(0 0 0 / 22%);
 	}
 
-	.player-inputs,
-	.scoreboard {
+	.player-inputs {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
 		align-items: end;
 		gap: 18px;
+	}
+
+	.matchup {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+		align-items: center;
+		gap: 16px;
 	}
 
 	.player-field label {
@@ -377,12 +505,8 @@
 		text-align: center;
 	}
 
-	.scoreboard {
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-		align-items: stretch;
-	}
-
 	.score-card {
+		min-width: 0;
 		padding: 20px 12px;
 		border: 1px solid #49405e;
 		border-radius: 12px;
@@ -398,15 +522,55 @@
 	}
 
 	.score {
-		margin: 14px 0 4px;
+		margin: 14px 0 0;
 		color: #ffe66d;
-		font-size: clamp(2rem, 8vw, 3rem);
 		font-weight: 900;
 	}
 
 	.score-label {
-		margin: 0;
-		font-size: 0.85rem;
+		display: block;
+		margin-top: 4px;
+		font-size: 0.8rem;
+		font-weight: 400;
+	}
+
+	.date-range {
+		margin: 10px 0 14px;
+		color: #b7adc9;
+		font-size: 0.75rem;
+	}
+
+	.graph-scroll {
+		overflow-x: auto;
+		padding: 2px 0 8px;
+	}
+
+	.contribution-grid {
+		display: grid;
+		width: max-content;
+		grid-auto-columns: 9px;
+		grid-auto-flow: column;
+		grid-template-rows: repeat(7, 9px);
+		gap: 3px;
+	}
+
+	.contribution-day {
+		width: 9px;
+		height: 9px;
+		border-radius: 2px;
+	}
+
+	.result-versus {
+		display: grid;
+		width: 46px;
+		height: 46px;
+		place-items: center;
+		border: 2px solid #ff6b8a;
+		border-radius: 50%;
+		background: #34203e;
+		color: #ff9aaf;
+		font-size: 0.8rem;
+		font-weight: 900;
 	}
 
 	@media (max-width: 560px) {
@@ -417,6 +581,14 @@
 		.player-inputs {
 			grid-template-columns: 1fr;
 			gap: 16px;
+		}
+
+		.matchup {
+			grid-template-columns: minmax(0, 1fr);
+		}
+
+		.result-versus {
+			justify-self: center;
 		}
 
 		.versus {
